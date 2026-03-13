@@ -204,3 +204,13 @@ This library wraps hierarchicalforecast for the MinTrace computation. The Nixtla
 - Wickramasuriya, S.L., Athanasopoulos, G. & Hyndman, R.J. (2019). Optimal forecast reconciliation using unbiased estimating equations. *JASA* 114(526):804–819.
 - Panagiotelis, A. et al. (2021). Forecast reconciliation: A geometric view. *IJF* 37(1):343–359.
 - Hyndman, R.J. & Athanasopoulos, G. (2021). *Forecasting: Principles and Practice*, 3rd ed. OTexts.
+
+## Performance
+
+Benchmarked against **bottom-up aggregation** and **top-down disaggregation** on synthetic UK home insurance data (7 perils, 2 covers, 1 portfolio, 24 monthly periods) with intentional incoherence injected at aggregate levels to simulate independently-run models. See `notebooks/benchmark_reconcile.py` for full methodology.
+
+- **Coherence:** All three methods (bottom-up, top-down, MinTrace) achieve zero coherence error by construction. The incoherent base forecasts typically show 2-8% discrepancy at cover level.
+- **RMSE by level:** MinTrace minimises total variance across the hierarchy simultaneously. Bottom-up wins at peril level (uses peril values unchanged). Top-down wins at portfolio level (uses portfolio value unchanged). MinTrace typically wins overall when both portfolio and cell models contain non-overlapping information.
+- **The key insurance insight:** bottom-up produces coherent but noisy aggregate forecasts for small perils (subsidence, flood) where individual period estimates are unreliable. Top-down produces coherent but overly smooth peril forecasts that miss peril-specific trend. MinTrace finds the variance-minimising trade-off.
+- **Calibration to portfolio scale:** premium-weighted MinTrace moves high-EP perils (Fire, EoW) minimally and allows low-EP perils (Subsidence, Flood) to move substantially — matching actuarial intuition that stable, high-volume cells should drive the aggregate.
+- **Limitation:** MinTrace is a linear method. It cannot handle structural breaks in the hierarchy (e.g., a major UW change that shifts the peril mix). Reconcile each regime separately. Requires `hierarchicalforecast` to be installed.
